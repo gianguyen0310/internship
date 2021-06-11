@@ -1,35 +1,24 @@
 import shutil
 import smtplib
 from email.mime.text import MIMEText
-import yaml # need to install package: yaml
 import platform
 import win32api # need to install package: pypiwin32
 
-### FOLLOW STEP 1 THROUGH STEP 4 BEFORE EXECUTE THE SCRIPT
+### FOLLOW STEP 1 THROUGH STEP 3 BEFORE EXECUTE THE SCRIPT
 
 # STEP 1: Change the path you want to check the disk space. For example: "C:\\Users\\znguyen"
-path = "C:\\Users\\znguyen" # if a path is provided, the disk_space_monitor function
-                            # will only check disk space for that path
-                            # if no path is provided, the disk_space_monitor function
-                            # will check all available drives in server
+path = ""
+        # if a path is provided, the disk_space_monitor() function will only check disk space for that path
+        # if no path is provided, the disk_space_monitor() function will check all available drives in server
 
 # STEP 2: Set the alert threshold (decimal): if percent_space_available < alert_threshold, alert email will be sent
-alert_threshold= 0.05
+alert_threshold= 0.25
 
-# STEP 3: Change the email you want to send alert to
+# STEP 3: Set up the senders and receivers for your email alert
+send_from_email= "product@heliocampus.com"
 send_to_email= "zack.nguyen@heliocampus.com"
 
-# STEP 4: Hide email credentials with YAML
-# you need to create the -credentials.yml- file and put it in the same directory with this script
-conf = yaml.full_load(open('credentials.yml')) # path to the YML file that store your credentials
-                                               # The credentials.yml will look similar to this:
-                                               # user:
-                                               #     email: example@mail.com
-                                               #     password: yourpassword
-email = conf["user"]["email"]
-pwd = conf["user"]["password"]
-
-# STEP 5: Run the script and check the result
+# STEP 4: Run the script and check the result
 # Define function to monitor disk space and send alert email
 def disk_space_monitor():
     # Define function to re-format the output of disk usage (convert bytes to Gb)
@@ -64,26 +53,24 @@ def disk_space_monitor():
                            " (" + free_space + ")" + " space left." + " Please check")
             msg["Subject"] = server_name + " | " + path + " | " + percent_space_available \
                              + " (" + free_space + ")" + " space left"
-            msg["From"] = email
+            msg["From"] = send_from_email
             msg["To"] = send_to_email
-            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            with smtplib.SMTP("smtp-relay.gmail.com", 587) as server:
                 server.ehlo()
                 server.starttls()
-                server.login(email, pwd)
-                server.sendmail(email, send_to_email, msg.as_string())
+                server.sendmail(send_from_email, send_to_email, msg.as_string())
         else:
             msg = MIMEText("Warning! Server: " + '"{}"'.format(server_name) + " path " + '"{}"'.format(i) +
                            " is running out of disk space. Only " + percent_space_available +
                            " (" + free_space + ")" + " space left." + " Please check")
             msg["Subject"] = server_name + " | " + i + " | " + percent_space_available\
                              + " (" + free_space + ")" + " space left"
-            msg["From"] = email
+            msg["From"] = send_from_email
             msg["To"] = send_to_email
-            with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            with smtplib.SMTP("smtp-relay.gmail.com", 587) as server:
                 server.ehlo()
                 server.starttls()
-                server.login(email, pwd)
-                server.sendmail(email, send_to_email, msg.as_string())
+                server.sendmail(send_from_email, send_to_email, msg.as_string())
 
     # Show server name (computer name)
     server_name = platform.node()
